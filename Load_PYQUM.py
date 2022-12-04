@@ -320,11 +320,10 @@ def command_analytic(selectdata,corder, perimeter,datadensity):
             command['change'] = append(command['change'],'RECORD-SUM')
             command['change_command'] = append(command['change_command'],'1to'+str(shot)+'*'+str(shot-1))
             command['change_len'] = append(command['change_len'],shot)
-
-    if len(command['change']) == 0:
+    if len(command['change']) != 0:
         print("Change : \n\t",command['change'])
         print("Change command : \n\t",command['change_command'])
-    if len(command['repeat']) == 0:
+    if len(command['repeat']) != 0:
         print("Repeat : \n\t",command['repeat'])
         print("Repeat_command : \n\t",command['repeat_command'])
     # print("Unchange : \n\t",command['parameter'])
@@ -344,6 +343,11 @@ def command_analytic(selectdata,corder, perimeter,datadensity):
         df = concat([df,df1],axis =1)
     df_label = df
     # print(df_label)
+    df_label = df_label.astype(float)
+    key = list(df_label.select_dtypes('number').columns)
+    removable = ['RECORD-SUM']
+    [key.remove(i) for i in removable if i in key]
+    [print('{:^15} : {:^6} to {:^6} * {:^5}'.format(i,df_label[i].min(),df_label[i].max(),df_label[i].nunique())) for i in key]
     return selectdata_i_data,selectdata_q_data, df_label 
 
 def pyqum_load_data(pyqum_path):
