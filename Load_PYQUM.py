@@ -1,6 +1,6 @@
 from os import listdir
 from os import stat
-from numpy import array,arctan2,append,diff,linspace,mean,ndarray,prod,sqrt,unwrap
+from numpy import array,arctan2,append,concatenate,diff,linspace,mean,ndarray,prod,sqrt,unwrap
 from ast import literal_eval
 from re import split
 from pandas import DataFrame,concat
@@ -265,8 +265,7 @@ def repeat_mean(data,repeat,repeat_command):return data.reshape((-1,int(repeat_c
 def construct_layer(where,change_command,change_list_len):
     repeat, group = multiply_except_self(where, change_list_len)
     # print(repeat,group)
-    out = seperate(where,change_command)*int(repeat)
-    out.sort()
+    out = list(concatenate([([i]*int(repeat)) for i in seperate(where,change_command)], axis=0))
     out = out*int(group)
     return out
 
