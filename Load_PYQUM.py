@@ -1,6 +1,6 @@
 from os import listdir
 from os import stat
-from numpy import array,arctan2,append,concatenate,diff,linspace,mean,ndarray,prod,sqrt,unwrap
+from numpy import array,arctan2,append,concatenate,diff,linspace,mean,ndarray,prod,sqrt,unwrap,delete
 from ast import literal_eval
 from re import split
 from pandas import DataFrame,concat
@@ -13,21 +13,39 @@ class Load_pyqum:
         except:
             self.pyqum_path = pyqum_path
         print(self.pyqum_path)
-        self.dataframe,self.jobid,self.file_label = pyqum_load_data(self.pyqum_path)
+        self.dataframe,self.jobid,self.file_label,self.command = pyqum_load_data(self.pyqum_path)
+    def iqplot(self):
+        import matplotlib.pyplot as plt
+        plt.scatter(self.dataframe['I'],self.dataframe['Q'],s = 2)
     def add_amp(self):
         if 'Amp' not in self.dataframe.columns:
             print('Add Amp')
-            df_amp =DataFrame(sqrt(self.dataframe['I']**2+self.dataframe['Q']**2), columns = ['Amp'])
+            amp = sqrt(self.dataframe['I']**2+self.dataframe['Q']**2)
+            df_amp =DataFrame(amp, columns = ['Amp'])
             self.dataframe = concat([self.dataframe,df_amp],axis =1)
             self.dataframe = self.dataframe.astype(float)
+        else:
+            amp = self.dataframe['Amp']
+        print('Amp_Min, Amp_Max : ({:.4f},{:.4f})'.format(min(amp),max(amp)))
     def add_phase(self):
         if 'UPhase' not in self.dataframe.columns:
-            print('Add UPhase')
+            print('Add UPhase')  
             UPhase = diff(unwrap(arctan2(self.dataframe['Q'],self.dataframe['I'])))
-            UPhase = append(UPhase, mean(UPhase))
+            UPhase = append(UPhase, mean(UPhase))      
             df_UPhase =DataFrame(UPhase, columns = ['UPhase'])
             self.dataframe = concat([self.dataframe,df_UPhase],axis =1)
             self.dataframe = self.dataframe.astype(float)
+        else:
+            UPhase = self.dataframe['UPhase']
+        print('Phase_Min, Phase_Max : ({:.4f},{:.4f})'.format(min(UPhase),max(UPhase)))
+    def amp_filter(self,amp_inf,amp_sup):
+        self.add_amp()
+        condition = (self.dataframe['Amp']>amp_inf)&(self.dataframe['Amp']<amp_sup)
+        return condition
+    def phase_filter(self,phase_inf,phase_sup):
+        self.add_phase()
+        condition = (self.dataframe['UPhase']>phase_inf)&(self.dataframe['UPhase']<phase_sup)
+        return condition
     def comment(self):
         return str(self.file_label['comment'])
     def corder(self):
@@ -347,16 +365,16 @@ def command_analytic(selectdata,corder, perimeter,datadensity):
     removable = ['RECORD-SUM']
     [key.remove(i) for i in removable if i in key]
     [print('{:^15} : {:^6} to {:^6} * {:^5}'.format(i,df_label[i].min(),df_label[i].max(),df_label[i].nunique())) for i in key]
-    return selectdata_i_data,selectdata_q_data, df_label 
+    return selectdata_i_data,selectdata_q_data, df_label, command
 
 def pyqum_load_data(pyqum_path):
     selectdata, corder, perimeter, jobid, datadensity, file_label = load_rawdata(pyqum_path)
-    mean_i_data, mean_q_data, df_label = command_analytic(selectdata,corder, perimeter,datadensity)
+    mean_i_data, mean_q_data, df_label, command= command_analytic(selectdata,corder, perimeter,datadensity)
     df_i = DataFrame(mean_i_data, columns = ['I'])
     df_q = DataFrame(mean_q_data, columns = ['Q'])
     df_data = concat([df_i,df_q],axis =1)
     tidy_data = concat([df_label,df_data],axis =1)
     tidy_data = tidy_data.astype(float)
-    return tidy_data,jobid,file_label
+    return tidy_data,jobid,file_label,command
 
     
