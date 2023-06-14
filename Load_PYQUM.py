@@ -15,8 +15,8 @@ class Load_pyqum:
         print(self.pyqum_path)
         self.dataframe,self.jobid,self.file_label,self.command = pyqum_load_data(self.pyqum_path)
     def iqplot(self):
-        import matplotlib.pyplot as plt
-        plt.scatter(self.dataframe['I'],self.dataframe['Q'],s = 2)
+        from matplotlib import pyplot
+        pyplot.scatter(self.dataframe['I'],self.dataframe['Q'],s = 2)
     def add_amp(self):
         if 'Amp' not in self.dataframe.columns:
             print('Add Amp')
@@ -377,4 +377,36 @@ def pyqum_load_data(pyqum_path):
     tidy_data = tidy_data.astype(float)
     return tidy_data,jobid,file_label,command
 
-    
+def find_file(foldername):
+    file_dir = listdir(foldername)
+    user_input = ''
+    input_message = "Pick an option:\n"
+    for index, item in enumerate(file_dir):
+        if index%5!=4:
+            input_message += f'{index+1}) {item}\t'
+        else:
+            input_message += f'{index+1}) {item}\n'
+    user_input = input(input_message+'\nYour Choice is ')
+    return foldername+file_dir[int(user_input) - 1]
+
+
+def jobid_search_pyqum(id):
+    # --------------Search Path --------------
+    path = 'pyqum.sqlite'
+    conn = connect(path)
+    job = read_sql_query("SELECT * FROM job", conn)
+    user = read_sql_query("SELECT * FROM user", conn)[['id','username']]
+    sample = read_sql_query("SELECT * FROM sample", conn)[['id','samplename','author_id']]
+    queue = read_sql_query("SELECT * FROM queue", conn)
+    sample_id = job[job['id']==id]['sample_id'].iloc[0]
+    queue_name = job[job['id']==id]['queue'].iloc[0]
+    dateday = job[job['id']==id]['dateday'].iloc[0]
+    task = job[job['id']==id]['task'].iloc[0]
+    wmoment  = job[job['id']==id]['wmoment'].iloc[0]
+    name_id = sample[sample['id']==sample_id]['author_id'].iloc[0]
+    name = user[user['id']==name_id]['username'].iloc[0]
+    sample_name = sample[sample['id']==sample_id]['samplename'].iloc[0]
+    mission = queue[queue['system']==queue_name]['mission'].iloc[0]
+    pyqum_path = r"C:\Users\ASQUM\HODOR\CONFIG\USRLOG\%s\%s\%s\%s\%s.pyqum(%d)"%(name,sample_name,mission,dateday,task,int(wmoment))
+    print("Path : ",pyqum_path)
+    return pyqum_path,task
